@@ -7,7 +7,7 @@ import seaborn as sns
 
 # === Load Raw Data ===
 data = pd.read_csv("data/raw/Walmart.csv")
-
+data.columns = data.columns.str.strip()  
 # === Convert Date and Extract Time Features ===
 data['Date'] = pd.to_datetime(data['Date'], format='%d-%m-%Y')
 data['Year'] = data['Date'].dt.year
