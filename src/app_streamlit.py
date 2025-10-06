@@ -13,7 +13,7 @@ logging.basicConfig(
 )
 logging.info('Started app_streamlit.py')
 
-from predict import make_prediction  # your existing prediction logic
+from predict import make_prediction  
 
 # --- Load model and scaler ---
 model_path = os.path.join("models", "xgb_sales_forecast.pkl")
