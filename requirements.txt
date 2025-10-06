@@ -20,3 +20,6 @@ joblib
 # Optional: for logging and YAML configs
 pyyaml
 loguru
+
+# Model
+xgboost

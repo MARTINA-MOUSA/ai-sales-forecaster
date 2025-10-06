@@ -7,34 +7,41 @@ import seaborn as sns
 
 # === Load Raw Data ===
 data = pd.read_csv("data/raw/Walmart.csv")
-data.columns = data.columns.str.strip()  
-# === Convert Date and Extract Time Features ===
-data['Date'] = pd.to_datetime(data['Date'], format='%d-%m-%Y')
+data.columns = data.columns.str.strip()  # إزالة أي مسافات في أسماء الأعمدة
+
+if 'Date' not in data.columns:
+    raise KeyError(f" Column 'Date' not found! Columns available: {data.columns.tolist()}")
+
+data['Date'] = pd.to_datetime(data['Date'], dayfirst=True, errors='coerce')
+
+# لو في تواريخ مش اتقرت
+missing_dates = data['Date'].isna().sum()
+if missing_dates > 0:
+    print(f" Warning: {missing_dates} dates could not be parsed. They will be dropped.")
+    data = data.dropna(subset=['Date'])
+
 data['Year'] = data['Date'].dt.year
 data['Month'] = data['Date'].dt.month
 data['Week'] = data['Date'].dt.isocalendar().week
 data['DayOfWeek'] = data['Date'].dt.dayofweek
 data['DayOfMonth'] = data['Date'].dt.day
-data['IsWeekend'] = data['DayOfWeek'].isin([5,6]).astype(int)
+data['IsWeekend'] = data['DayOfWeek'].isin([5, 6]).astype(int)
 data['Season'] = (data['Month'] % 12 + 3) // 3
-data['IsYearEnd'] = data['Month'].isin([11,12]).astype(int)
+data['IsYearEnd'] = data['Month'].isin([11, 12]).astype(int)
 
-# === Remove Outliers using IQR ===
 Q1 = data['Weekly_Sales'].quantile(0.25)
 Q3 = data['Weekly_Sales'].quantile(0.75)
 IQR = Q3 - Q1
-lower = Q1 - 1.5*IQR
-upper = Q3 + 1.5*IQR
+lower = Q1 - 1.5 * IQR
+upper = Q3 + 1.5 * IQR
 data = data[(data['Weekly_Sales'] >= lower) & (data['Weekly_Sales'] <= upper)].reset_index(drop=True)
 
-# === Feature Engineering ===
-# Interaction features
 data['Temp_Fuel'] = data['Temperature'] * data['Fuel_Price']
 data['CPI_Unemp'] = data['CPI'] * data['Unemployment']
 
 # Cyclical features for Month
-data['Month_sin'] = np.sin(2*np.pi*data['Month']/12)
-data['Month_cos'] = np.cos(2*np.pi*data['Month']/12)
+data['Month_sin'] = np.sin(2 * np.pi * data['Month'] / 12)
+data['Month_cos'] = np.cos(2 * np.pi * data['Month'] / 12)
 
 # Rolling features: mean of last 4 weeks for each store
 data['Rolling_4w'] = data.groupby('Store')['Weekly_Sales'].transform(lambda x: x.rolling(4, min_periods=1).mean())
@@ -77,7 +84,7 @@ y = data[target]
 
 # === Optional: save processed dataset ===
 data.to_csv("data/processed/walmart_enhanced.csv", index=False)
-print("Processed dataset saved to data/processed/walmart_enhanced.csv")
+print(" Processed dataset saved to data/processed/walmart_enhanced.csv")
 print("Features for model:", X.columns.tolist())
 print("Target:", target)
 
