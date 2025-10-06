@@ -24,6 +24,26 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Verify dataset exists
+      run: |
+        echo "Checking if dataset exists..."
+        ls -l data/raw || true
+        if [ ! -f "data/raw/Walmart.csv" ]; then
+          echo " Walmart.csv file not found in data/raw/"
+          exit 1
+        fi
+        echo " Walmart.csv file found."
+        head -n 5 data/raw/Walmart.csv
+
+    - name: Inspect columns
+      run: |
+        python - << 'EOF'
+        import pandas as pd
+        data = pd.read_csv("data/raw/Walmart.csv", encoding="utf-8-sig")
+        print(" File read successfully.")
+        print(" Columns in dataset:", list(data.columns))
+        EOF
+
     - name: Run Data Preprocessing
       run: |
         python src/data_preprocessing.py
