@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/DELL/Desktop/Ai/ai-sales-forecaster/mlruns_local/904236849272010536/models/m-a983541c6ba6429cb7a410618cd4d0b8/artifacts
+creation_timestamp: 1759785858334
+experiment_id: '904236849272010536'
+last_updated_timestamp: 1759785868047
+model_id: m-a983541c6ba6429cb7a410618cd4d0b8
+model_type: null
+name: xgb_sales_forecast
+source_run_id: 79a8bd3ef47d4ac68b4a04b8879c7b35
+status: 2
+status_message: null
