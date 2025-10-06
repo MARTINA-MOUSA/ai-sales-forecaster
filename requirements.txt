@@ -1,0 +1,22 @@
+# Core Python packages
+numpy
+pandas
+scikit-learn
+matplotlib
+seaborn
+
+# MLOps tools
+dvc
+mlflow
+
+# Model serving / API
+fastapi
+uvicorn
+
+# Utilities
+python-dotenv
+joblib
+
+# Optional: for logging and YAML configs
+pyyaml
+loguru
