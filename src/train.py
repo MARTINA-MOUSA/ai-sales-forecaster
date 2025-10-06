@@ -13,44 +13,24 @@ from monitoring import log_system_metrics
 import mlflow
 import mlflow.sklearn
 from datetime import datetime
-import platform
-
-# === Detect OS and Set Base Paths Safely ===
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(BASE_DIR)
-
-# Normalize path separators (works on Linux/Windows)
-ROOT_DIR = os.path.normpath(ROOT_DIR)
-
-LOG_DIR = os.path.join(ROOT_DIR, "logs")
-MODEL_DIR = os.path.join(ROOT_DIR, "models")
-TRAIN_DIR = os.path.join(ROOT_DIR, "data", "train_sets")
-TEST_DIR = os.path.join(ROOT_DIR, "data", "test_sets")
-DATA_PATH = os.path.join(ROOT_DIR, "data", "processed", "walmart_enhanced.csv")
-
-# === Create Directories if Missing ===
-os.makedirs(LOG_DIR, exist_ok=True)
-os.makedirs(MODEL_DIR, exist_ok=True)
-os.makedirs(TRAIN_DIR, exist_ok=True)
-os.makedirs(TEST_DIR, exist_ok=True)
 
 # === Setup Logging ===
+os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
     encoding="utf-8"
 )
-handler = RotatingFileHandler(os.path.join(LOG_DIR, "train.log"), maxBytes=5_000_000, backupCount=5, encoding="utf-8")
+handler = RotatingFileHandler("logs/train.log", maxBytes=5_000_000, backupCount=5, encoding="utf-8")
 logging.getLogger().addHandler(handler)
 
 logging.info("Started train.py")
 
-# === MLflow Config ===
-mlflow_path = os.path.join(ROOT_DIR, "mlruns")
-mlflow.set_tracking_uri(f"file:{mlflow_path}")
+mlflow.set_tracking_uri("file:./mlruns")
 mlflow.set_experiment("AI_Sales_Forecaster")
 
 # === Load Data ===
+DATA_PATH = "data/processed/walmart_enhanced.csv"
 try:
     data = pd.read_csv(DATA_PATH)
     logging.info(f"Data loaded successfully: {data.shape}")
@@ -60,10 +40,10 @@ except Exception as e:
 
 # === Features & Target ===
 features = [
-    'Store', 'Holiday_Flag', 'Temperature', 'Fuel_Price', 'CPI', 'Unemployment',
-    'Year', 'Month', 'Week', 'IsWeekend', 'Season', 'IsYearEnd',
-    'IsHolidayWeek', 'Temp_Fuel', 'CPI_Unemp', 'Month_sin', 'Month_cos',
-    'Rolling_4w', 'Sales_diff_rolling', 'Cluster'
+    'Store','Holiday_Flag','Temperature','Fuel_Price','CPI','Unemployment',
+    'Year','Month','Week','IsWeekend','Season','IsYearEnd',
+    'IsHolidayWeek','Temp_Fuel','CPI_Unemp','Month_sin','Month_cos',
+    'Rolling_4w','Sales_diff_rolling','Cluster'
 ]
 target = 'Weekly_Sales'
 
@@ -72,7 +52,7 @@ if len(existing_features) < len(features):
     missing = set(features) - set(existing_features)
     logging.warning(f"Some features are missing: {missing}")
 
-# === Clean Data ===
+# === Remove non-numeric columns before scaling ===
 X = data[existing_features].select_dtypes(include=[np.number])
 y = data[target]
 
@@ -87,21 +67,26 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-joblib.dump(scaler, os.path.join(MODEL_DIR, "scaler.pkl"))
+# === Save Scaler ===
+os.makedirs("models", exist_ok=True)
+joblib.dump(scaler, "models/scaler.pkl")
 logging.info("Scaler saved -> models/scaler.pkl")
 
 # === Save Train/Test Sets ===
+os.makedirs("data/train_sets", exist_ok=True)
+os.makedirs("data/test_sets", exist_ok=True)
+
 train_df = pd.DataFrame(X_train_scaled, columns=X_train.columns)
 train_df["Actual_Sales"] = y_train.values
-train_df.to_csv(os.path.join(TRAIN_DIR, "train_data.csv"), index=False)
+train_df.to_csv("data/train_sets/train_data.csv", index=False)
 
 test_df = pd.DataFrame(X_test_scaled, columns=X_test.columns)
 test_df["Actual_Sales"] = y_test.values
-test_df.to_csv(os.path.join(TEST_DIR, "test_data.csv"), index=False)
+test_df.to_csv("data/test_sets/test_data.csv", index=False)
 
 logging.info("Train/Test CSVs saved -> data/train_sets/train_data.csv & data/test_sets/test_data.csv")
 
-# === Model Params ===
+# === Train Model ===
 params = {
     "n_estimators": 500,
     "learning_rate": 0.05,
@@ -111,10 +96,8 @@ params = {
     "random_state": 42,
     "n_jobs": -1
 }
-
 model = XGBRegressor(**params)
 
-# === Train with MLflow ===
 with mlflow.start_run(run_name=f"train_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"):
     mlflow.log_params(params)
 
@@ -142,28 +125,22 @@ with mlflow.start_run(run_name=f"train_run_{datetime.now().strftime('%Y%m%d_%H%M
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     r2 = r2_score(y_test, y_pred)
 
-    metrics = {"MAE": mae, "RMSE": float(rmse), "R2": float(r2)}
+    metrics = {"MAE": mae, "RMSE": rmse, "R2": r2}
     mlflow.log_metrics(metrics)
     logging.info(f"Model evaluation: {metrics}")
 
-    with open(os.path.join(MODEL_DIR, "metrics.json"), "w", encoding="utf-8") as f:
+    with open("models/metrics.json", "w", encoding="utf-8") as f:
         json.dump(metrics, f, indent=4)
 
     # === Save Model & Log to MLflow ===
-    model_path = os.path.join(MODEL_DIR, "xgb_sales_forecast.pkl")
-    joblib.dump(model, model_path)
-
-    # Provide input example for signature
-    input_example = X_test.iloc[:2]
-
+    joblib.dump(model, "models/xgb_sales_forecast.pkl")
     mlflow.sklearn.log_model(
-        sk_model=model,
+        model,
         artifact_path="model",
-        input_example=input_example
+        input_example=X_test.iloc[:2]
     )
-
-    mlflow.log_artifact(os.path.join(MODEL_DIR, "metrics.json"))
-    mlflow.log_artifact(os.path.join(MODEL_DIR, "scaler.pkl"))
+    mlflow.log_artifact("models/metrics.json")
+    mlflow.log_artifact("models/scaler.pkl")
 
     logging.info("Model and artifacts logged to MLflow.")
 
