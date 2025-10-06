@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/DELL/Desktop/Ai/ai-sales-forecaster/mlruns/996258689877461059/models/m-e054542f147a421d9c2e4063909bd831/artifacts
+creation_timestamp: 1759784105357
+experiment_id: '996258689877461059'
+last_updated_timestamp: 1759784115760
+model_id: m-e054542f147a421d9c2e4063909bd831
+model_type: null
+name: model
+source_run_id: e7788da3ab454874905b77056d9e537c
+status: 2
+status_message: null
