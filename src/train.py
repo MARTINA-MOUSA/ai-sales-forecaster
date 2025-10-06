@@ -13,10 +13,14 @@ from monitoring import log_system_metrics
 import mlflow
 import mlflow.sklearn
 from datetime import datetime
+import platform
 
-# === Safe Paths ===
+# === Detect OS and Set Base Paths Safely ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR)
+
+# Normalize path separators (works on Linux/Windows)
+ROOT_DIR = os.path.normpath(ROOT_DIR)
 
 LOG_DIR = os.path.join(ROOT_DIR, "logs")
 MODEL_DIR = os.path.join(ROOT_DIR, "models")
@@ -24,6 +28,7 @@ TRAIN_DIR = os.path.join(ROOT_DIR, "data", "train_sets")
 TEST_DIR = os.path.join(ROOT_DIR, "data", "test_sets")
 DATA_PATH = os.path.join(ROOT_DIR, "data", "processed", "walmart_enhanced.csv")
 
+# === Create Directories if Missing ===
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(MODEL_DIR, exist_ok=True)
 os.makedirs(TRAIN_DIR, exist_ok=True)
@@ -41,7 +46,8 @@ logging.getLogger().addHandler(handler)
 logging.info("Started train.py")
 
 # === MLflow Config ===
-mlflow.set_tracking_uri(f"file:{os.path.join(ROOT_DIR, 'mlruns')}")
+mlflow_path = os.path.join(ROOT_DIR, "mlruns")
+mlflow.set_tracking_uri(f"file:{mlflow_path}")
 mlflow.set_experiment("AI_Sales_Forecaster")
 
 # === Load Data ===
