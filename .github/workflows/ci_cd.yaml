@@ -14,7 +14,7 @@ jobs:
     - name: Checkout Repository (with LFS)
       uses: actions/checkout@v3
       with:
-        lfs: true  # ✅ دي أهم سطر، علشان ينزل ملفات Git LFS
+        lfs: true  
 
     - name: Set up Python
       uses: actions/setup-python@v4
