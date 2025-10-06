@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/DELL/Desktop/Ai/ai-sales-forecaster/mlruns/996258689877461059/d45538d658934d71a0993ad50475f16b/artifacts
+end_time: 1759783082716
+entry_point_name: ''
+experiment_id: '996258689877461059'
+lifecycle_stage: active
+run_id: d45538d658934d71a0993ad50475f16b
+run_name: train_run_20251006_233747
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1759783067880
+status: 3
+tags: []
+user_id: Martina_Mousa

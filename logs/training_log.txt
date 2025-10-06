@@ -1,0 +1,13 @@
+2025-10-06 23:40:13,905 | INFO |  Starting model training process...
+2025-10-06 23:40:14,949 | INFO | System before training -> CPU: 9.0%, RAM: 93.4%
+2025-10-06 23:40:14,949 | WARNING |  High system usage before training!
+2025-10-06 23:42:20,844 | INFO | 🚀 Starting model training process...
+2025-10-06 23:42:20,891 | INFO | 🗓️ Date column processed into Year, Month, Day
+2025-10-06 23:42:21,902 | INFO | System before training -> CPU: 11.6%, RAM: 94.0%
+2025-10-06 23:42:21,902 | WARNING |  High system usage before training!
+2025-10-06 23:42:32,668 | INFO |  Training completed successfully | MAE: 7893.67, RMSE: 15945.05, R²: 0.999
+2025-10-06 23:42:32,687 | INFO | Scaler saved -> models/scaler.pkl
+2025-10-06 23:42:32,794 | INFO | Train/Test CSVs saved -> data/train_sets/train_data.csv & data/test_sets/test_data.csv
+2025-10-06 23:42:33,798 | INFO | System after training -> CPU: 12.6%, RAM: 92.2%
+2025-10-06 23:42:33,798 | WARNING |  High system usage detected after training!
+2025-10-06 23:42:33,798 | INFO |  Training pipeline finished successfully.

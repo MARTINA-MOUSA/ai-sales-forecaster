@@ -26,3 +26,4 @@ xgboost
 
 # Testing
 pytest
+mlflow

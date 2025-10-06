@@ -1,40 +1,24 @@
 import joblib
 import os
 import logging
+from logging.handlers import RotatingFileHandler
 import pandas as pd
+import time
+from monitoring import log_system_metrics  
 
-model_path = os.path.join("models", "xgb_sales_forecast.pkl")
-scaler_path = os.path.join("models", "scaler.pkl")
-
-if not os.path.exists(model_path):
-    raise FileNotFoundError(" Model file not found. Please train the model first.")
-if not os.path.exists(scaler_path):
-    raise FileNotFoundError(" Scaler file not found. Please train the model first.")
-
-model = joblib.load(model_path)
-scaler = joblib.load(scaler_path)
-
-def make_prediction(input_data):
-
-    if isinstance(input_data, dict):
-        input_df = pd.DataFrame([input_data])
-    else:
-        input_df = pd.DataFrame(input_data)
-
-    input_scaled = scaler.transform(input_df)
-
-    predictions = model.predict(input_scaled)
-
-    input_df["Predicted_Sales"] = predictions
-    return input_df
+os.makedirs("logs", exist_ok=True)
 
 logging.basicConfig(
-    filename='log.txt',
     level=logging.INFO,
     format='%(asctime)s | %(levelname)s | %(message)s',
     encoding='utf-8'
 )
-logging.info('Started predict.py')
+handler = RotatingFileHandler('logs/predict.log', maxBytes=5000000, backupCount=5)
+logging.getLogger().addHandler(handler)
+
+# تحميل الموديل والسكيلر
+model_path = os.path.join("models", "xgb_sales_forecast.pkl")
+scaler_path = os.path.join("models", "scaler.pkl")
 
 try:
     model = joblib.load(model_path)
@@ -46,14 +30,26 @@ except Exception as e:
 
 def make_prediction(input_data):
     try:
+        logging.info(f'Received input: {input_data}')
+
         if isinstance(input_data, dict):
             input_df = pd.DataFrame([input_data])
         else:
             input_df = pd.DataFrame(input_data)
+
+        start_time = time.time()
         input_scaled = scaler.transform(input_df)
         predictions = model.predict(input_scaled)
+        elapsed_time = time.time() - start_time
+
         input_df["Predicted_Sales"] = predictions
-        logging.info('Prediction made successfully.')
+
+        # سجل المتركس بتاعة الجهاز
+        system_metrics = get_system_metrics()
+        logging.info(f'System Metrics: {system_metrics}')
+
+        # سجل تفاصيل التنبؤ
+        logging.info(f'Prediction done in {elapsed_time:.2f}s. Output: {predictions.tolist()}')
         return input_df
     except Exception as e:
         logging.error(f'Error in make_prediction: {e}')
