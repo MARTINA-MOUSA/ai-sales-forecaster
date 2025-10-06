@@ -3,20 +3,37 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
-from predict import make_prediction  # use your existing prediction logic
+import logging
+
+logging.basicConfig(
+    filename='log.txt',
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    encoding='utf-8'
+)
+logging.info('Started app_streamlit.py')
+
+from predict import make_prediction  # your existing prediction logic
 
 # --- Load model and scaler ---
 model_path = os.path.join("models", "xgb_sales_forecast.pkl")
 scaler_path = os.path.join("models", "scaler.pkl")
 
 if not os.path.exists(model_path) or not os.path.exists(scaler_path):
+    logging.error("Model or scaler not found. Please train the model first.")
     st.error("Model or scaler not found. Please train the model first.")
     st.stop()
 
-model = joblib.load(model_path)
-scaler = joblib.load(scaler_path)
+try:
+    model = joblib.load(model_path)
+    scaler = joblib.load(scaler_path)
+    logging.info('Model and scaler loaded successfully.')
+except Exception as e:
+    logging.error(f'Error loading model or scaler: {e}')
+    st.error('Error loading model or scaler. Check log.txt for details.')
+    st.stop()
 
-st.title(" AI Sales Forecasting App")
+st.title("AI Sales Forecasting App")
 st.markdown("Enter store and economic details to predict **Weekly Sales**")
 
 # --- User input fields ---
@@ -36,10 +53,7 @@ rolling_4w = st.number_input("Rolling 4 Weeks Avg Sales", value=200000.0)
 sales_diff_rolling = st.number_input("Sales Diff Rolling", value=5000.0)
 cluster = st.number_input("Cluster ID", min_value=0, max_value=10, value=1)
 
-# --- Feature engineering (same as in train.py) ---
-day = 15
-quarter = (month - 1) // 3 + 1
-is_holiday_week = 1 if holiday_flag == 1 else 0
+# --- Feature engineering (for features used in training) ---
 temp_fuel = temperature * fuel_price
 cpi_unemp = cpi * unemployment
 month_sin = np.sin(2 * np.pi * month / 12)
@@ -63,9 +77,6 @@ input_data = pd.DataFrame([{
     'IsWeekend': is_weekend,
     'Season': season_encoded,
     'IsYearEnd': is_year_end,
-    'Day': day,
-    'Quarter': quarter,
-    'IsHolidayWeek': is_holiday_week,
     'Temp_Fuel': temp_fuel,
     'CPI_Unemp': cpi_unemp,
     'Month_sin': month_sin,

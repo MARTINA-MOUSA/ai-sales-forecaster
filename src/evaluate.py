@@ -26,7 +26,10 @@ features = [
 ]
 target = "Actual_Sales"
 
-X_test = test_data[features]
+existing_features = [col for col in features if col in test_data.columns]
+if len(existing_features) < len(features):
+    print("Warning: Some features are missing from test_data and will be excluded from evaluation:", set(features) - set(existing_features))
+X_test = test_data[existing_features]
 y_test = test_data[target]
 
 # --- Predict ---

@@ -1,24 +1,41 @@
-import pandas as pd
+
+# إعداد اللوجينج
+import logging
+logging.basicConfig(
+    filename='log.txt',
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    encoding='utf-8'
+)
+logging.info('Started data_preprocessing.py')
+
 import numpy as np
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 
 # === Load Raw Data ===
-data = pd.read_csv("data/raw/Walmart.csv")
-data.columns = data.columns.str.strip()  # إزالة أي مسافات في أسماء الأعمدة
+try:
+    data = pd.read_csv("data/raw/Walmart.csv")
+    data.columns = data.columns.str.strip()
+    logging.info('Loaded Walmart.csv successfully.')
+except Exception as e:
+    logging.error(f'Error loading Walmart.csv: {e}')
+    raise
 
 if 'Date' not in data.columns:
+    logging.error(f"Column 'Date' not found! Columns available: {data.columns.tolist()}")
     raise KeyError(f" Column 'Date' not found! Columns available: {data.columns.tolist()}")
 
 data['Date'] = pd.to_datetime(data['Date'], dayfirst=True, errors='coerce')
-
-# لو في تواريخ مش اتقرت
 missing_dates = data['Date'].isna().sum()
 if missing_dates > 0:
-    print(f" Warning: {missing_dates} dates could not be parsed. They will be dropped.")
+    logging.warning(f"{missing_dates} dates could not be parsed. They will be dropped.")
     data = data.dropna(subset=['Date'])
+
+logging.info('Date column processed and missing dates handled.')
 
 data['Year'] = data['Date'].dt.year
 data['Month'] = data['Date'].dt.month
@@ -77,6 +94,8 @@ features = [
     'Unemployment', 'Year', 'Month', 'Week', 'IsWeekend', 'Season', 'IsYearEnd',
     'Temp_Fuel', 'CPI_Unemp', 'Month_sin', 'Month_cos', 'Rolling_4w', 'Sales_diff_rolling', 'Cluster'
 ]
+import pandas as pd
+import logging
 target = 'Weekly_Sales'
 
 X = data[features]
@@ -87,14 +106,22 @@ data.to_csv("data/processed/walmart_enhanced.csv", index=False)
 print(" Processed dataset saved to data/processed/walmart_enhanced.csv")
 print("Features for model:", X.columns.tolist())
 print("Target:", target)
-
-# === Quick Check Plots ===
-plt.figure(figsize=(8,5))
+try:
+    # === Load Raw Data ===
+    data = pd.read_csv("data/raw/Walmart.csv")
+    data.columns = data.columns.str.strip()
+    logging.info('Loaded Walmart.csv successfully.')
+except Exception as e:
+    logging.error(f'Error loading Walmart.csv: {e}')
+    raise
 sns.histplot(data['Weekly_Sales'], bins=30, kde=True)
 plt.title("Sales Distribution (After Enhanced Features)")
 plt.show()
 
 plt.figure(figsize=(10,8))
-sns.heatmap(data[features + [target]].corr(), annot=True, cmap='coolwarm', fmt=".2f")
+existing_features = [col for col in features if col in data.columns]
+if len(existing_features) < len(features):
+    print("Warning: Some features are missing from data and will be excluded from the heatmap:", set(features) - set(existing_features))
+sns.heatmap(data[existing_features + [target]].corr(), annot=True, cmap='coolwarm', fmt=".2f")
 plt.title("Correlation Heatmap")
 plt.show()

@@ -6,6 +6,7 @@ import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
+import logging
 
 # --- Load Data ---
 DATA_PATH = "data/processed/walmart_enhanced.csv"
@@ -14,11 +15,22 @@ print(f"Data loaded: {data.shape}")
 
 # --- Feature Engineering (ensure all enhanced features exist) ---
 data['Date'] = pd.to_datetime(data['Date'])
+logging.basicConfig(
+    filename='log.txt',
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    encoding='utf-8'
+)
+logging.info('Started train.py')
 data['Day'] = data['Date'].dt.day
 data['Quarter'] = data['Date'].dt.quarter
 data['IsHolidayWeek'] = data['Holiday_Flag'].apply(lambda x: 1 if x==1 else 0)
-data['Temp_Fuel'] = data['Temperature'] * data['Fuel_Price']
-data['CPI_Unemp'] = data['CPI'] * data['Unemployment']
+try:
+    data = pd.read_csv(DATA_PATH)
+    logging.info(f"Data loaded: {data.shape}")
+except Exception as e:
+    logging.error(f'Error loading {DATA_PATH}: {e}')
+    raise
 
 # --- Select Features & Target ---
 features = [
@@ -29,7 +41,10 @@ features = [
 ]
 target = 'Weekly_Sales'
 
-X = data[features]
+existing_features = [col for col in features if col in data.columns]
+if len(existing_features) < len(features):
+    print("Warning: Some features are missing from data and will be excluded from training:", set(features) - set(existing_features))
+X = data[existing_features]
 y = data[target]
 
 # --- Train/Test Split ---
