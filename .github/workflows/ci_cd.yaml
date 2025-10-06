@@ -11,8 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
+    - name: Checkout Repository (with LFS)
       uses: actions/checkout@v3
+      with:
+        lfs: true  # ✅ دي أهم سطر، علشان ينزل ملفات Git LFS
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -23,26 +25,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-
-    - name: Verify dataset exists
-      run: |
-        echo "Checking if dataset exists..."
-        ls -l data/raw || true
-        if [ ! -f "data/raw/Walmart.csv" ]; then
-          echo " Walmart.csv file not found in data/raw/"
-          exit 1
-        fi
-        echo " Walmart.csv file found."
-        head -n 5 data/raw/Walmart.csv
-
-    - name: Inspect columns
-      run: |
-        python - << 'EOF'
-        import pandas as pd
-        data = pd.read_csv("data/raw/Walmart.csv", encoding="utf-8-sig")
-        print(" File read successfully.")
-        print(" Columns in dataset:", list(data.columns))
-        EOF
 
     - name: Run Data Preprocessing
       run: |
@@ -65,8 +47,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Checkout Repository
+      - name: Checkout Repository (with LFS)
         uses: actions/checkout@v3
+        with:
+          lfs: true  
 
       - name: Deploy FastAPI App
-        run: echo " Deployment step goes here (e.g. to Render, Azure, or EC2)"
+        run: echo "Deployment step goes here (e.g. Render, Azure, or EC2)"
