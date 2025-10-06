@@ -23,3 +23,6 @@ loguru
 
 # Model
 xgboost
+
+# Testing
+pytest
